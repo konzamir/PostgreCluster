@@ -1,0 +1,23 @@
+image: node:10.16.0
+stages:
+ - deploy
+before_script:
+ - apt-get update -qq && apt-get install -y -qq sshpass
+ - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+ - eval $(ssh-agent -s)
+ - echo "$USER"
+ - echo "$SSH_KEY" | tr -d '\r' | ssh-add - > /dev/null
+ - mkdir -p ~/.ssh
+ - chmod 700 ~/.ssh
+ - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+deploy_staging:
+ stage: deploy
+ script:
+   - npm install
+   - npm run build
+   - sshpass -V
+   - export SSHPASS=''
+   - ls -al
+   - sshpass -e scp -p $SSHPASS -r ./build $USER@$HOST:/var/www/321play_front
+ only:
+   - master
